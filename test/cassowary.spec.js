@@ -27,8 +27,8 @@ describe('Cassowary', function() {
         expect(a).to.equal(constraintVarA._value);
 
         // Two-way data binding
-        aexpr(() => a).onChange(val => constraintVarA._value = val);
-        aexpr(() => constraintVarA._value).onChange(val => a = val);
+        aexpr(() => a).onChange(val => constraintVarA.set_value(val));
+        aexpr(() => constraintVarA.value()).onChange(val => a = val);
 
         expect(a).to.equal(constraintVarA._value);
 
@@ -51,21 +51,21 @@ describe('Cassowary', function() {
             // a
             let constraintVarA = new Cassowary.ClVariable('a', a);
             constraintVarA.stay(Cassowary.ClStrength.weak);
-            aexpr(() => a).onChange(val => constraintVarA._value = val);
-            aexpr(() => constraintVarA._value).onChange(val => a = val);
+            aexpr(() => a).onChange(val => constraintVarA.set_value(val));
+            aexpr(() => constraintVarA.value()).onChange(val => a = val);
 
             // b
             let constraintVarB = new Cassowary.ClVariable('b', b);
             constraintVarB.stay(Cassowary.ClStrength.weak);
-            aexpr(() => b).onChange(val => constraintVarB._value = val);
-            aexpr(() => constraintVarB._value).onChange(val => b = val);
-        aexpr(()=> a).onChange(val => console.log(`a: ${val}`));
-        aexpr(()=> b).onChange(val => console.log(`b: ${val}`));
+            aexpr(() => b).onChange(val => constraintVarB.set_value(val));
+            aexpr(() => constraintVarB.value()).onChange(val => b = val);
+        //aexpr(()=> a).onChange(val => console.log(`a: ${val}`));
+        //aexpr(()=> b).onChange(val => console.log(`b: ${val}`));
             let linearEquation = constraintVarA.times(2).cnEquals(constraintVarB);
             let solver = Cassowary.ClSimplexSolver.getInstance();
             solver.addConstraint(linearEquation);
 
-            trigger(aexpr(() => 2 * constraintVarA._value == constraintVarB._value))
+            trigger(aexpr(() => 2 * constraintVarA.value() == constraintVarB.value()))
                 .onBecomeFalse(() => {
                     solver.solveConstraints();
                 });
@@ -128,8 +128,8 @@ describe('Cassowary', function() {
             let constraintVarA = solver.getConstraintVariableFor(_scope, 'a', () => {
                 let _constraintVar = new Cassowary.ClVariable('a', a);
                 _constraintVar.stay(Cassowary.ClStrength.weak);
-                aexpr(() => a).onChange(val => _constraintVar._value = val);
-                aexpr(() => _constraintVar._value).onChange(val => a = val);
+                aexpr(() => a).onChange(val => _constraintVar.set_value(val));
+                aexpr(() => _constraintVar.value()).onChange(val => a = val);
                 return _constraintVar;
             });
 
@@ -137,15 +137,15 @@ describe('Cassowary', function() {
             let constraintVarB = solver.getConstraintVariableFor(_scope, 'b', () => {
                 let _constraintVar = new Cassowary.ClVariable('b', b);
                 _constraintVar.stay(Cassowary.ClStrength.weak);
-                aexpr(() => b).onChange(val => _constraintVar._value = val);
-                aexpr(() => _constraintVar._value).onChange(val => b = val);
+                aexpr(() => b).onChange(val => _constraintVar.set_value(val));
+                aexpr(() => _constraintVar.value()).onChange(val => b = val);
                 return _constraintVar;
             });
 
             let linearEquation = constraintVarA.times(2).cnEquals(constraintVarB);
             solver.addConstraint(linearEquation);
 
-            trigger(aexpr(() => 2 * constraintVarA._value == constraintVarB._value))
+            trigger(aexpr(() => 2 * constraintVarA.value() == constraintVarB.value()))
                 .onBecomeFalse(() => {
                     solver.solveConstraints();
                 });
@@ -166,8 +166,8 @@ describe('Cassowary', function() {
                 let constraintVarA = solver.getConstraintVariableFor(_scope, 'a', () => {
                     let _constraintVar = new Cassowary.ClVariable('a', a);
                     _constraintVar.stay(Cassowary.ClStrength.weak);
-                    aexpr(() => a).onChange(val => _constraintVar._value = val);
-                    aexpr(() => _constraintVar._value).onChange(val => a = val);
+                    aexpr(() => a).onChange(val => _constraintVar.set_value(val));
+                    aexpr(() => _constraintVar.value()).onChange(val => a = val);
                     return _constraintVar;
                 });
 
@@ -175,8 +175,8 @@ describe('Cassowary', function() {
                 let constraintVarB = solver.getConstraintVariableFor(_scope2, 'b', () => {
                     let _constraintVar = new Cassowary.ClVariable('b', b);
                     _constraintVar.stay(Cassowary.ClStrength.weak);
-                    aexpr(() => b).onChange(val => _constraintVar._value = val);
-                    aexpr(() => _constraintVar._value).onChange(val => b = val);
+                    aexpr(() => b).onChange(val => _constraintVar.set_value(val));
+                    aexpr(() => _constraintVar.value()).onChange(val => b = val);
                     return _constraintVar;
                 });
 
@@ -184,15 +184,15 @@ describe('Cassowary', function() {
                 let constraintVarC = solver.getConstraintVariableFor(_scope2, 'c', () => {
                     let _constraintVar = new Cassowary.ClVariable('c', c);
                     _constraintVar.stay(Cassowary.ClStrength.weak);
-                    aexpr(() => c).onChange(val => _constraintVar._value = val);
-                    aexpr(() => _constraintVar._value).onChange(val => c = val);
+                    aexpr(() => c).onChange(val => _constraintVar.set_value(val));
+                    aexpr(() => _constraintVar.value()).onChange(val => c = val);
                     return _constraintVar;
                 });
 
                 let linearEquation = constraintVarA.plus(constraintVarB).cnEquals(constraintVarC.times(2));
                 solver.addConstraint(linearEquation);
 
-                trigger(aexpr(() => constraintVarA._value + constraintVarB._value == 2 * constraintVarC._value))
+                trigger(aexpr(() => constraintVarA.value() + constraintVarB.value() == 2 * constraintVarC.value()))
                     .onBecomeFalse(() => {
                         solver.solveConstraints();
                     });
