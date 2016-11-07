@@ -1,5 +1,3 @@
-import withLogging from '../src/withlogging.js';
-import select from '../src/select.js';
 import {
     ClVariable,
     CL,
@@ -110,7 +108,6 @@ describe('Cassowary', function() {
             ClSlackVariable, ClStayConstraint, ClStrength, ClObjectiveVariable,
             ExCLConstraintNotFound, ExCLError, ExCLNonlinearExpression, ExCLInternalError,
             ExCLNotEnoughStays, ExCLRequiredFailure, ExCLTooDifficult, Timer;
-        debugger
         solver.addConstraint(linExpr);
         solver.solve();
 
