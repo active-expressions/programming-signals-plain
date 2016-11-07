@@ -15,6 +15,7 @@ import {
     ExCLNotEnoughStays, ExCLRequiredFailure, ExCLTooDifficult, Timer
 }  from './../lib/dwarfcassowary/dwarfcassowary.js';
 import * as Cassowary from './../lib/dwarfcassowary/dwarfcassowary.js';
+Cassowary; // TODO: this keeps rollup from tree-shaking away our import reference to Cassowary
 import trigger from 'aexpr-trigger';
 
 describe('Cassowary', function() {
@@ -216,10 +217,18 @@ describe('Cassowary', function() {
         expect(a + getLocalB()).to.equal(2 * getLocalC());
     });
 
-    xit('rewrite test', function() {
+    it('rewrite test', function() {
         var a = 2, b = 3, c = 10;
+
+        console.log(a, b, c);
         always: 2 * a + 3 * b == c;
 
+        console.log(a, b, c);
+        expect(2 * a + 3 * b).to.equal(c);
+
+        c = 42;
+
+        console.log(a, b, c);
         expect(2 * a + 3 * b).to.equal(c);
     });
 });

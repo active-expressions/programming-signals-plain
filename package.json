@@ -1,9 +1,9 @@
 {
-  "name": "reactive-object-queries",
+  "name": "linear-constraints",
   "version": "1.0.0",
-  "description": "A JavaScript Prototype of Reactive Object Queries",
-  "main": "dist/reactive-object-queries.js",
-  "jsnext:main": "src/reactive-object-queries.js",
+  "description": "An example of a reactive constraint library using active expressions",
+  "main": "dist/linear-constraints.js",
+  "jsnext:main": "src/linear-constraints.js",
   "directories": {
     "test": "tests"
   },
@@ -18,7 +18,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/active-expressions/reactive-object-queries.git"
+    "url": "git+https://github.com/active-expressions/linear-constraints.git"
   },
   "keywords": [
     "reactive",
@@ -35,9 +35,9 @@
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/active-expressions/reactive-object-queries/issues"
+    "url": "https://github.com/active-expressions/linear-constraints/issues"
   },
-  "homepage": "https://github.com/active-expressions/reactive-object-queries#readme",
+  "homepage": "https://github.com/active-expressions/linear-constraints#readme",
   "devDependencies": {
     "babel": "^6.0.15",
     "babel-cli": "^6.11.4",
@@ -111,6 +111,7 @@
   "dependencies": {
     "aexpr-source-transformation-propagation": "^1.6.0",
     "aexpr-trigger": "^1.1.0",
-    "babel-plugin-aexpr-source-transformation": "^2.3.8"
+    "babel-plugin-aexpr-source-transformation": "^2.3.8",
+    "babel-plugin-always-constraint": "^1.0.0"
   }
 }
