@@ -1,5 +1,5 @@
-# Reactive Object Queries[![Build Status](https://travis-ci.org/active-expressions/linear-constraints.svg?branch=master)](https://travis-ci.org/active-expressions/linear-constraints)
-A JavaScript implementation of reactive object queries using active expressions.
+# Linear Constraint Solver[![Build Status](https://travis-ci.org/active-expressions/linear-constraints.svg?branch=master)](https://travis-ci.org/active-expressions/linear-constraints)
+An example of a reactive constraint library using active expressions
 
 ## Installation
 
