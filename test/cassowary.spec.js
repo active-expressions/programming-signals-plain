@@ -212,19 +212,19 @@ describe('Cassowary', function() {
         it('test applying rewriter', function() {
             let a = 2, b = 3, c = 5;
 
-            always: 2 * a == b;
+            always: 2 * a == b; // a = 1.5, b = 3
 
             expect(a).not.to.equal(0);
             expect(b).not.to.equal(0);
             expect(2 * a).to.equal(b);
 
-            a = 10;
+            a = 10; // a = 10, b = 20
 
             expect(a).to.equal(10);
             expect(b).not.to.equal(0);
             expect(2 * a).to.equal(b);
 
-            always: a + c == b;
+            always: a + c == b; // a = 10, b = 20, c = 10
 
             expect(a).not.to.equal(0);
             expect(b).not.to.equal(0);
@@ -232,7 +232,7 @@ describe('Cassowary', function() {
             expect(2 * a).to.equal(b);
             expect(a + c).to.equal(b);
 
-            b = 3000;
+            b = 3000; // a = 1500, b = 3000, c = 1500
 
             expect(b).to.equal(3000);
             expect(2 * a).to.equal(b);
