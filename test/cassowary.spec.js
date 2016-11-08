@@ -11,15 +11,15 @@ import {
     ClSlackVariable, ClStayConstraint, ClStrength, ClObjectiveVariable,
     ExCLConstraintNotFound, ExCLError, ExCLNonlinearExpression, ExCLInternalError,
     ExCLNotEnoughStays, ExCLRequiredFailure, ExCLTooDifficult, Timer
-}  from 'dwarfcassowary';
-import * as Cassowary from 'dwarfcassowary';
+}  from '../lib/dwarfcassowary/dwarfcassowary.js';
+import * as Cassowary from '../lib/dwarfcassowary/dwarfcassowary.js';
 Cassowary; // TODO: this keeps rollup from tree-shaking away our import reference to Cassowary
 import trigger from 'aexpr-trigger';
 
 describe('Cassowary', function() {
     beforeEach(() => Cassowary.ClSimplexSolver.resetInstance());
 
-    xit('two-way data binding', function() {
+    it('two-way data binding', function() {
         let a = 2,
             constraintVarA = new Cassowary.ClVariable('a', a);
 
@@ -42,263 +42,218 @@ describe('Cassowary', function() {
         expect(a).to.equal(constraintVarA._value);
     });
 
-    it('test for assignment', function() {
-        let a = 2, b = 3, c = 5;
+    describe('system integration', function() {
+        // understanding the library API
+        it('manual usage of solver library', function() {
+            let a = 2, b = 3, c = 5;
 
-        let solver = Cassowary.ClSimplexSolver.getInstance();
+            let solver = Cassowary.ClSimplexSolver.getInstance();
 
-        // a
-        let constraintVarA = new Cassowary.ClVariable('a', a);
-        //aexpr(() => a).onChange(val => constraintVarA.set_value(val));
-        //aexpr(() => constraintVarA.value()).onChange(val => a = val);
-        //solver._constraintVariablesByVariables.set('a', constraintVarA);
+            // a
+            let constraintVarA = new Cassowary.ClVariable('a', a);
 
-        // b
-        let constraintVarB = new Cassowary.ClVariable('b', b);
-        //aexpr(() => b).onChange(val => constraintVarB.set_value(val));
-        //aexpr(() => constraintVarB.value()).onChange(val => b = val);
-        //solver._constraintVariablesByVariables.set('b', constraintVarB);
+            // b
+            let constraintVarB = new Cassowary.ClVariable('b', b);
 
-        /*
-         * Initial Constraint Solving
-         */
-        console.log('INITIAL CONSTRAINT CONSTRUCTION',
-            constraintVarA.toString(),
-            constraintVarB.toString()
-        );
-        //always: 2 * a == b;
-        let linearEquation = constraintVarA.times(2).cnEquals(constraintVarB);
-        solver.addConstraint(linearEquation);
+            /*
+             * Initial Constraint Solving
+             */
+            //always: 2 * a == b;
+            let linearEquation = constraintVarA.times(2).cnEquals(constraintVarB);
+            solver.addConstraint(linearEquation);
 
-        constraintVarA.stay(Cassowary.ClStrength.weak);
-        constraintVarB.stay(Cassowary.ClStrength.weak);
-        solver.solveConstraints();
+            solver.solveConstraints();
 
-        expect(constraintVarA.value()).not.to.equal(0);
-        expect(constraintVarB.value()).not.to.equal(0);
-        expect(2 * constraintVarA.value()).to.equal(constraintVarB.value());
+            expect(constraintVarA.value()).not.to.equal(0);
+            expect(constraintVarB.value()).not.to.equal(0);
+            expect(2 * constraintVarA.value()).to.equal(constraintVarB.value());
 
-        /*
-         * Assignment to A
-         */
-        console.log('ASSIGNMENT TO A',
-            constraintVarA.toString(),
-            constraintVarB.toString()
-        );
-        constraintVarA.set_value(10);
-        //solver.solveConstraints();
-        constraintVarA.suggestValue(10);
+            /*
+             * Assignment to A
+             */
+            constraintVarA.set_value(10);
+            constraintVarA.suggestValue(10);
 
-        expect(constraintVarA.value()).to.equal(10);
-        expect(constraintVarB.value()).not.to.equal(0);
-        expect(2 * constraintVarA.value()).to.equal(constraintVarB.value());
+            expect(constraintVarA.value()).to.equal(10);
+            expect(constraintVarB.value()).not.to.equal(0);
+            expect(2 * constraintVarA.value()).to.equal(constraintVarB.value());
 
-        /*
-         * Second Constraint
-         */
-        // c
-        console.log('SECOND CONSTRAINT',
-            constraintVarA.toString(),
-            constraintVarB.toString()
-        );
-        let constraintVarC = new Cassowary.ClVariable('c', c);
-        constraintVarB.stay(Cassowary.ClStrength.weak);
-        //aexpr(() => b).onChange(val => constraintVarB.set_value(val));
-        //aexpr(() => constraintVarB.value()).onChange(val => b = val);
-        //solver._constraintVariablesByVariables.set('c', constraintVarC);
+            // c
+            let constraintVarC = new Cassowary.ClVariable('c', c);
 
-        let linearEquation2 = constraintVarA.plus(constraintVarB).cnEquals(constraintVarC);
-        solver.addConstraint(linearEquation2);
-        solver.solveConstraints();
+            /*
+             * Second Constraint
+             */
+            let linearEquation2 = constraintVarA.plus(constraintVarC).cnEquals(constraintVarB);
+            solver.addConstraint(linearEquation2);
+            solver.solveConstraints();
 
-        expect(constraintVarA.value()).not.to.equal(0);
-        expect(constraintVarB.value()).not.to.equal(0);
-        expect(constraintVarC.value()).not.to.equal(0);
-        expect(2 * constraintVarA.value()).to.equal(constraintVarB.value());
-        expect(constraintVarA.value() + constraintVarB.value()).to.equal(constraintVarC.value());
+            expect(constraintVarA.value()).not.to.equal(0);
+            expect(constraintVarB.value()).not.to.equal(0);
+            expect(constraintVarC.value()).not.to.equal(0);
+            expect(2 * constraintVarA.value()).to.equal(constraintVarB.value());
+            expect(constraintVarA.value() + constraintVarC.value()).to.equal(constraintVarB.value());
 
-        /*
-         * Assignment to B
-         */
-        console.log('ASSIGNMENT TO B',
-            constraintVarA.toString(),
-            constraintVarB.toString(),
-            constraintVarC.toString()
-        );
-        constraintVarB.set_value(3000);
-        constraintVarB.suggestValue(3000);
-        //solver.solveConstraints();
+            /*
+             * Assignment to B
+             */
+            constraintVarB.set_value(3000);
+            constraintVarB.suggestValue(3000);
 
-        expect(constraintVarB.value()).to.equal(3000);
-        expect(2 * constraintVarA.value()).to.equal(constraintVarB.value());
-        expect(constraintVarA.value() + constraintVarB.value()).to.equal(constraintVarC.value());
-    });
-
-    xit('simple equality', function() {
-        let a = 2, b = 3;
-
-        //always: 2 * a == b;
-
-        // a
-        let constraintVarA = new Cassowary.ClVariable('a', a);
-        constraintVarA.stay(Cassowary.ClStrength.weak);
-        aexpr(() => a).onChange(val => constraintVarA.set_value(val));
-        aexpr(() => constraintVarA.value()).onChange(val => a = val);
-
-        // b
-        let constraintVarB = new Cassowary.ClVariable('b', b);
-        constraintVarB.stay(Cassowary.ClStrength.weak);
-        aexpr(() => b).onChange(val => constraintVarB.set_value(val));
-        aexpr(() => constraintVarB.value()).onChange(val => b = val);
-        //aexpr(()=> a).onChange(val => console.log(`a: ${val}`));
-        //aexpr(()=> b).onChange(val => console.log(`b: ${val}`));
-        let linearEquation = constraintVarA.times(2).cnEquals(constraintVarB);
-        let solver = Cassowary.ClSimplexSolver.getInstance();
-        solver.addConstraint(linearEquation);
-
-        trigger(aexpr(() => 2 * constraintVarA.value() == constraintVarB.value()))
-            .onBecomeFalse(() => {
-                if (!solver.__solving__) {
-                    solver.__solving__ = true;
-                    solver.addAssignmentConstraints();
-
-                    try {
-                        solver.solveConstraints();
-                    } finally {
-                        solver.__solving__ = false;
-                        solver.removeAssignmentConstraints();
-                    }
-                }
-            });
-
-
-        //console.log(a, b, constraintVarA._value, constraintVarB._value);
-        expect(2 * a).to.equal(b);
-
-        a = 10;
-        //console.log(a, b, constraintVarA._value, constraintVarB._value);
-        //expect(a).to.equal(10);
-        expect(2 * a).to.equal(b);
-
-        b = 3000;
-        //console.log(a, b, constraintVarA._value, constraintVarB._value);
-        expect(2 * a).to.equal(b);
-
-        return;
-        expect(a).to.equal(10);
-        expect(a).to.equal(constraintVarA._value);
-
-        constraintVarA._value = 20;
-
-        expect(a).to.equal(20);
-        expect(a).to.equal(constraintVarA._value);
-        return;
-
-        expect(2 * a + 3 * b).to.equal(c);
-
-        let solver2 = Cassowary.ClSimplexSolver.getInstance();
-        let linExpr = a.times(1);
-        linExpr=linExpr.cnEquals(2);
-        ClVariable,
-            CL,
-            ClAbstractVariable,
-            ClDummyVariable,
-            ClEditConstraint,
-            ClEditInfo,
-            ClEditOrStayConstraint,
-            ClLinearConstraint, ClLinearEquation, ClLinearExpression,
-            ClLinearInequality, ClConstraint, ClPoint, ClSimplexSolver,
-            ClSlackVariable, ClStayConstraint, ClStrength, ClObjectiveVariable,
-            ExCLConstraintNotFound, ExCLError, ExCLNonlinearExpression, ExCLInternalError,
-            ExCLNotEnoughStays, ExCLRequiredFailure, ExCLTooDifficult, Timer;
-        solver.addConstraint(linExpr);
-        solver.solve();
-
-        expect(a.value()).to.equal(b.value());
-    });
-
-    xit('this test opens a printer!?', function() {
-        let a = 2, b = 3;
-
-        //always: 2 * a == b;
-        let solver = Cassowary.ClSimplexSolver.getInstance();
-
-        // a
-        let constraintVarA = solver.getConstraintVariableFor(window, 'a', () => {
-            let _constraintVar = new Cassowary.ClVariable('a', a);
-            //_constraintVar.stay(Cassowary.ClStrength.weak);
-            aexpr(() => a).onChange(val => _constraintVar.set_value(val));
-            aexpr(() => _constraintVar.value()).onChange(val => a = val);
-            return _constraintVar;
+            expect(constraintVarB.value()).to.equal(3000);
+            expect(2 * constraintVarA.value()).to.equal(constraintVarB.value());
+            expect(constraintVarA.value() + constraintVarC.value()).to.equal(constraintVarB.value());
         });
 
-        // b
-        let constraintVarB = solver.getConstraintVariableFor(window, 'b', () => {
-            let _constraintVar = new Cassowary.ClVariable('b', b);
-            //_constraintVar.stay(Cassowary.ClStrength.weak);
-            aexpr(() => b).onChange(val => _constraintVar.set_value(val));
-            aexpr(() => _constraintVar.value()).onChange(val => b = val);
-            return _constraintVar;
+        // identify, what the source transformation should do
+        it('mimicing rewriter', function() {
+            let a = 2, b = 3, c = 5;
+
+            let solver = Cassowary.ClSimplexSolver.getInstance();
+
+            // a
+            let constraintVarA = new Cassowary.ClVariable('a', a);
+            solver._constraintVariablesByVariables.set('a', constraintVarA);
+            aexpr(() => a).onChange(val => constraintVarA.set_value(val));
+            aexpr(() => constraintVarA.value()).onChange(val => a = val);
+
+            // b
+            let constraintVarB = new Cassowary.ClVariable('b', b);
+            solver._constraintVariablesByVariables.set('b', constraintVarB);
+            aexpr(() => b).onChange(val => constraintVarB.set_value(val));
+            aexpr(() => constraintVarB.value()).onChange(val => b = val);
+
+            /*
+             * Initial Constraint Solving
+             */
+            console.log('BEFORE INITIAL CONSTRAINT CONSTRUCTION',
+                constraintVarA.toString(), a,
+                constraintVarB.toString(), b
+            );
+            //always: 2 * a == b;
+            let linearEquation = constraintVarA.times(2).cnEquals(constraintVarB);
+            solver.addConstraint(linearEquation);
+
+            trigger(aexpr(() => 2 * constraintVarA.value() == constraintVarB.value()))
+                .onBecomeFalse(() => solver.solveConstraints());
+
+            expect(a).not.to.equal(0);
+            expect(b).not.to.equal(0);
+            expect(2 * a).to.equal(b);
+
+            console.log('AFTER INITIAL CONSTRAINT CONSTRUCTION',
+                constraintVarA.toString(), a,
+                constraintVarB.toString(), b
+            );
+
+            /*
+             * Assignment to A
+             */
+            console.log('ASSIGNMENT TO A',
+                constraintVarA.toString(), a,
+                constraintVarB.toString(), b
+            );
+            a = 10;
+            //constraintVarA.suggestValue(10);
+            //solver.solveConstraints();
+
+            expect(a).to.equal(10);
+            expect(b).not.to.equal(0);
+            expect(2 * a).to.equal(b);
+
+            /*
+             * Second Constraint
+             */
+            // c
+            let constraintVarC = new Cassowary.ClVariable('c', c);
+            solver._constraintVariablesByVariables.set('c', constraintVarC);
+            aexpr(() => c).onChange(val => constraintVarC.set_value(val));
+            aexpr(() => constraintVarC.value()).onChange(val => c = val);
+
+            console.log('SECOND CONSTRAINT',
+                constraintVarA.toString(), a,
+                constraintVarB.toString(), b,
+                constraintVarC.toString(), c
+            );
+            let linearEquation2 = constraintVarA.plus(constraintVarC).cnEquals(constraintVarB);
+            solver.addConstraint(linearEquation2);
+            trigger(aexpr(() => constraintVarA.value() + constraintVarC.value() == constraintVarB.value()))
+                .onBecomeFalse(() => solver.solveConstraints());
+
+            console.log('SECOND CONSTRAINT AFTER SOLVING',
+                constraintVarA.toString(), a,
+                constraintVarB.toString(), b,
+                constraintVarC.toString(), c
+            );
+            expect(a).not.to.equal(0);
+            expect(b).not.to.equal(0);
+            expect(c).not.to.equal(0);
+            expect(2 * a).to.equal(b);
+            expect(a + c).to.equal(b);
+
+            /*
+             * Assignment to B
+             */
+            b = 3000;
+            //constraintVarB.suggestValue(3000);
+            //solver.solveConstraints();
+
+            console.log('ASSIGNMENT TO B',
+                constraintVarA.toString(), a,
+                constraintVarB.toString(), b,
+                constraintVarC.toString(), c
+            );
+            expect(b).to.equal(3000);
+            expect(2 * a).to.equal(b);
+            expect(a + c).to.equal(b);
         });
 
-        let linearEquation = constraintVarA.times(2).cnEquals(constraintVarB);
-        solver.addConstraint(linearEquation);
+        // using the source transformation
+        it('test applying rewriter', function() {
+            let a = 2, b = 3, c = 5;
 
-        console.log(
-            'BEFORE CONSTRAINT CONSTRUCTION',
-            a, constraintVarA.toString(), constraintVarA._lastValue,
-            b, constraintVarB.toString(), constraintVarB._lastValue
-        );
+            always: 2 * a == b;
 
-        trigger(aexpr(() => 2 * constraintVarA.value() == constraintVarB.value()))
-            .onBecomeFalse(() => {
-                if (!solver.__solving__) {
-                    solver.__solving__ = true;
-                    solver.addAssignmentConstraints();
+            expect(a).not.to.equal(0);
+            expect(b).not.to.equal(0);
+            expect(2 * a).to.equal(b);
 
-                    try {
-                        solver.solveConstraints();
-                    } finally {
-                        solver.__solving__ = false;
-                        solver.removeAssignmentConstraints();
-                    }
-                }
-            });
+            a = 10;
 
-        console.log(
-            'AFTER CONSTRAINT CONSTRUCTION',
-            a, constraintVarA.toString(), constraintVarA._lastValue,
-            b, constraintVarB.toString(), constraintVarB._lastValue
-        );
+            expect(a).to.equal(10);
+            expect(b).not.to.equal(0);
+            expect(2 * a).to.equal(b);
 
-        expect(2 * a).to.equal(b);
+            always: a + c == b;
 
-        console.log(
-            'BEFORE ASSIGNMENT TO A',
-            a, constraintVarA.toString(), constraintVarA._lastValue,
-            b, constraintVarB.toString(), constraintVarB._lastValue
-        );
-        a = 10;
-        //console.log(a, b, constraintVarA._value, constraintVarB._value);
-        expect(a).to.equal(10);
-        expect(2 * a).to.equal(b);
+            expect(a).not.to.equal(0);
+            expect(b).not.to.equal(0);
+            expect(c).not.to.equal(0);
+            expect(2 * a).to.equal(b);
+            expect(a + c).to.equal(b);
 
-        console.log(
-            'BEFORE ASSIGNMENT TO B',
-            a, constraintVarA.toString(), constraintVarA._lastValue,
-            b, constraintVarB.toString(), constraintVarB._lastValue
-        );
-        b = 3000;
-        console.log(
-            'AFTER ASSIGNMENT TO B',
-            a, constraintVarA.toString(), constraintVarA._lastValue,
-            b, constraintVarB.toString(), constraintVarB._lastValue
-        );
-        //console.log(a, b, constraintVarA._value, constraintVarB._value);
-        expect(b).to.equal(3000);
-        expect(2 * a).to.equal(b);
+            b = 3000;
+
+            expect(b).to.equal(3000);
+            expect(2 * a).to.equal(b);
+            expect(a + c).to.equal(b);
+        });
     });
 
+    ClVariable,
+        CL,
+        ClAbstractVariable,
+        ClDummyVariable,
+        ClEditConstraint,
+        ClEditInfo,
+        ClEditOrStayConstraint,
+        ClLinearConstraint, ClLinearEquation, ClLinearExpression,
+        ClLinearInequality, ClConstraint, ClPoint, ClSimplexSolver,
+        ClSlackVariable, ClStayConstraint, ClStrength, ClObjectiveVariable,
+        ExCLConstraintNotFound, ExCLError, ExCLNonlinearExpression, ExCLInternalError,
+        ExCLNotEnoughStays, ExCLRequiredFailure, ExCLTooDifficult, Timer;
+
+    // TODO: same variables in different scopes
     xit('involve multiple constraints', function() {
         let _scope = {};
         let a = 2, b = 3;
@@ -310,7 +265,6 @@ describe('Cassowary', function() {
             // a
             let constraintVarA = solver.getConstraintVariableFor(_scope, 'a', () => {
                 let _constraintVar = new Cassowary.ClVariable('a', a);
-                _constraintVar.stay(Cassowary.ClStrength.weak);
                 aexpr(() => a).onChange(val => _constraintVar.set_value(val));
                 aexpr(() => _constraintVar.value()).onChange(val => a = val);
                 return _constraintVar;
@@ -319,7 +273,6 @@ describe('Cassowary', function() {
             // global b
             let constraintVarB = solver.getConstraintVariableFor(_scope, 'b', () => {
                 let _constraintVar = new Cassowary.ClVariable('b', b);
-                _constraintVar.stay(Cassowary.ClStrength.weak);
                 aexpr(() => b).onChange(val => _constraintVar.set_value(val));
                 aexpr(() => _constraintVar.value()).onChange(val => b = val);
                 return _constraintVar;
@@ -382,7 +335,6 @@ describe('Cassowary', function() {
                 // a
                 let constraintVarA = solver.getConstraintVariableFor(_scope, 'a', () => {
                     let _constraintVar = new Cassowary.ClVariable('a', a);
-                    _constraintVar.stay(Cassowary.ClStrength.weak);
                     aexpr(() => a).onChange(val => _constraintVar.set_value(val));
                     aexpr(() => _constraintVar.value()).onChange(val => a = val);
                     return _constraintVar;
@@ -391,7 +343,6 @@ describe('Cassowary', function() {
                 // local b
                 let constraintVarB = solver.getConstraintVariableFor(_scope2, 'b', () => {
                     let _constraintVar = new Cassowary.ClVariable('b', b);
-                    _constraintVar.stay(Cassowary.ClStrength.weak);
                     aexpr(() => b).onChange(val => _constraintVar.set_value(val));
                     aexpr(() => _constraintVar.value()).onChange(val => b = val);
                     return _constraintVar;
@@ -400,7 +351,6 @@ describe('Cassowary', function() {
                 // c
                 let constraintVarC = solver.getConstraintVariableFor(_scope2, 'c', () => {
                     let _constraintVar = new Cassowary.ClVariable('c', c);
-                    _constraintVar.stay(Cassowary.ClStrength.weak);
                     aexpr(() => c).onChange(val => _constraintVar.set_value(val));
                     aexpr(() => _constraintVar.value()).onChange(val => c = val);
                     return _constraintVar;
@@ -441,39 +391,28 @@ describe('Cassowary', function() {
         expect(a + getLocalB()).to.equal(2 * getLocalC());
     });
 
-    xit('rewrite test', function() {
+    it('two constraints with assignment', function() {
         var a = 2, b = 3, c = 10;
 
-        //console.log(a, b, c);
         always: 2 * a + 3 * b == c;
-
-        //console.log(a, b, c);
         expect(2 * a + 3 * b).to.equal(c);
 
         always: 2 * a == b;
-        //console.log(a, b, c);
         expect(2 * a + 3 * b).to.equal(c);
         expect(2 * a).to.equal(b);
 
         c = 42;
-
-        //console.log(a, b, c);
         expect(2 * a + 3 * b).to.equal(c);
         expect(2 * a).to.equal(b);
     });
 
-    xit('rewrite test with assignment', function() {
+    it('rewrite test with assignment', function() {
         var a = 2, b = 3, c = 10;
 
-        console.log(a, b, c);
         always: 2 * a + 3 * b == c;
-
-        console.log(a, b, c);
         expect(2 * a + 3 * b).to.equal(c);
 
         c = 42;
-
-        console.log(a, b, c);
         expect(2 * a + 3 * b).to.equal(c);
     });
 });
