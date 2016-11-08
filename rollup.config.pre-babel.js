@@ -6,7 +6,7 @@ import multiEntry from 'rollup-plugin-multi-entry';
 export default {
     entry: 'test/**/!(layer)*.spec.js',
     dest: 'test/temp/pre-babel.js',
-    external: ['aexpr-source-transformation-propagation'],
+    external: ['dwarfcassowary', 'aexpr-source-transformation-propagation'],
     plugins: [
         nodeResolve({
             jsnext: true,

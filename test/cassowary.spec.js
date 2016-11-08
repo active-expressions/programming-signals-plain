@@ -11,8 +11,8 @@ import {
     ClSlackVariable, ClStayConstraint, ClStrength, ClObjectiveVariable,
     ExCLConstraintNotFound, ExCLError, ExCLNonlinearExpression, ExCLInternalError,
     ExCLNotEnoughStays, ExCLRequiredFailure, ExCLTooDifficult, Timer
-}  from './../lib/dwarfcassowary/dwarfcassowary.js';
-import * as Cassowary from './../lib/dwarfcassowary/dwarfcassowary.js';
+}  from 'dwarfcassowary';
+import * as Cassowary from 'dwarfcassowary';
 Cassowary; // TODO: this keeps rollup from tree-shaking away our import reference to Cassowary
 import trigger from 'aexpr-trigger';
 

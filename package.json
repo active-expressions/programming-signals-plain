@@ -111,7 +111,8 @@
   "dependencies": {
     "aexpr-source-transformation-propagation": "^1.6.0",
     "aexpr-trigger": "^1.1.0",
-    "babel-plugin-aexpr-source-transformation": "^2.3.8",
-    "babel-plugin-always-constraint": "^1.0.1"
+    "babel-plugin-aexpr-source-transformation": "^2.3.10",
+    "babel-plugin-always-constraint": "^1.0.1",
+    "dwarfcassowary": "^1.0.0"
   }
 }
