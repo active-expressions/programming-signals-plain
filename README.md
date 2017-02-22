@@ -1,8 +1,7 @@
-# Linear Constraint Solver[![Build Status](https://travis-ci.org/active-expressions/linear-constraints.svg?branch=master)](https://travis-ci.org/active-expressions/linear-constraints)
-An example of a reactive constraint library using active expressions
+# Signals based on Active Expressions [![Build Status](https://travis-ci.org/active-expressions/programming-signals-aexpr.svg?branch=master)](https://travis-ci.org/active-expressions/programming-signals-aexpr)
 
 ## Installation
-
+<!--
 As npm for Node.js:
 
 ```
@@ -18,7 +17,7 @@ $ npm run-script build
 ```
 
 creates the *bundle* file in the `dist` folder.
-
+-->
 ## Testing
 
 As npm package:
