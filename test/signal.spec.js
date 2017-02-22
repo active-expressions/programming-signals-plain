@@ -22,7 +22,7 @@ describe('Signal Logic', function() {
 
         const b = a + 2;
 
-        let c = b + 2;
+        const c = b + 2;
 
         expect(b).to.equal(a + 2);
         expect(c).to.equal(b + 2);
@@ -33,27 +33,20 @@ describe('Signal Logic', function() {
         expect(c).to.equal(b + 2);
     });
 
-    it('shows the glitch problem', () => {
+    xit('shows the glitch problem', () => {
         let a = 0;
-        let b = aexpr(() => a + 1)
-            .onChange(val => b = val)
-            .getCurrentValue();
-        let c = aexpr(() => a - 1)
-            .onChange(val => c = val)
-            .getCurrentValue();
-        let alwaysTrue = aexpr(() => b > c)
-            .onChange(val => alwaysTrue = val)
-            .getCurrentValue();
-        let spy = sinon.spy();
-        aexpr(() => alwaysTrue).onChange(spy);
+        const b = a;
+        const c = a + 1;
 
-        expect(alwaysTrue).to.be.true;
+        function checkConsistency() {
+            if(c !== b + 1) {
+                throw new Error('subject to the glitch problem! a: ' + a + ', b: ' + b + ', c: ' +c);
+            }
+        }
+
+        aexpr(() => b).onChange(checkConsistency);
+        aexpr(() => c).onChange(checkConsistency);
 
         a = -10;
-        // alwaysTrue becomes false temporarily :(
-        expect(spy.withArgs(false)).to.be.calledOnce;
-        expect(spy.withArgs(true)).to.be.calledOnce;
-
-        expect(alwaysTrue).to.be.true;
     });
 });
