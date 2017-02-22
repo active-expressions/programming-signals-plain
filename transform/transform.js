@@ -2,12 +2,81 @@ const IS_EXPLICIT_SCOPE_OBJECT = Symbol('FLAG: generated scope object');
 
 export default function({ types: t, template, traverse, }) {
     var setup = template(`
-var aexprCallbacks = [],
-    signals = [],
-    solveSignals = false,
-    resolveSignals = function() {
-      signals.forEach(s => s ());
+const signals = [],
+    defineSignal = function(scope, name, init, solve) {
+      let signal = new Signal(scope, name, init, solve);
+      signals.push(signal);
+      return signal.initialize();
+    },
+    resolveSignals = function(starting) {
+      let startingIndex = signals.indexOf(starting);
+      signals
+        .filter((s, i) => i >= startingIndex)
+        .forEach(s => s.resolve());
+    },
+    getLocal = function(scope, name) {
+      if(Signal.determineDepencencies) {
+        Signal.currentSignal.addDependency(scope, name);
+      }
+    },
+    setLocal = function(scope, name) {
+      if(Signal.solving) { return; }
+      let triggeredSignal = signals.find(s => s.hasDependency(scope, name));
+      if(triggeredSignal) {
+        Signal.solving = true;
+        resolveSignals(triggeredSignal);
+        Signal.solving = false;
+      }
+    };
+
+const compositeKeyStore = new Map();
+
+class Signal {
+  constructor(scope, name, init, solve) {
+    this.scope = scope,
+    this.name = name,
+    this.init = init,
+    this.solve = solve;
+    this.dependencies = new Set();
+  }
+  initialize() {
+    this.dependencies.clear();
+    Signal.determineDepencencies = true;
+    Signal.currentSignal = this;
+    let result = this.init();
+    Signal.determineDepencencies = false;
+    Signal.currentSignal = undefined;
+    return result;
+  }
+  addDependency(scope, name) {
+    this.dependencies.add(CompositeKey.get(scope, name));
+  }
+  hasDependency(scope, name) {
+    return this.dependencies.has(CompositeKey.get(scope, name));
+  }
+  resolve() {
+    this.solve();
+  }
+}
+Signal.currentSignal = undefined;
+Signal.determineDepencencies = false;
+Signal.solving = false;
+
+class CompositeKey {
+    static get(obj1, obj2) {
+        if(!compositeKeyStore.has(obj1)) {
+            compositeKeyStore.set(obj1, new Map());
+        }
+        let secondKeyMap = compositeKeyStore.get(obj1);
+        if(!secondKeyMap.has(obj2)) {
+            secondKeyMap.set(obj2, {});
+        }
+        return secondKeyMap.get(obj2);
     }
+    static clear() {
+        compositeKeyStore.clear();
+    }
+}
 `);
     
     return {
@@ -94,10 +163,23 @@ var aexprCallbacks = [],
                   let pattern = bubbleThroughPattern(identifierPath);
                   return pattern.parentPath.isVariableDeclarator() && pattern.parentKey === 'id';
                 }
+                
+                program.traverse({
+                  UpdateExpression(path) {
+                    path.replaceWith(t.binaryExpression(
+                      path.node.operator === '++' ? '-' : '+',
+                      t.assignmentExpression(
+                        path.node.operator === '++' ? '+=' : '-=',
+                        path.get('argument').node,
+                        t.numberLiteral(1)
+                      ),
+                      t.numberLiteral(1)
+                    ));
+                  }
+                });
 
                 let localReads = new Set();
                 let localWrites = new Set();
-                let bindings = new Set();
                 let signalDeclarators = new Set();
                 
                 program.traverse({
@@ -109,7 +191,7 @@ var aexprCallbacks = [],
                     } else if (isVariable(path) &&isLocallyDefined(path)) {
                       let pattern = bubbleThroughPattern(path);
                       // const as substitute for 'signal' for now #TODO
-                      if(pattern.parentPath.parentPath.kind === 'const') {
+                      if(pattern.parentPath.parentPath.node.kind === 'const') {
                         signalDeclarators.add(pattern.parentPath);
                       }
                     }
@@ -117,60 +199,39 @@ var aexprCallbacks = [],
                 });
                 
                 localReads.forEach(path => {
-                  path.replaceWith(template(`(result => {
+                  path.replaceWith(template(`((result, scope, name) => {
+                      getLocal(scope, name);
                       return result;
-                    })(identifier, scope, name)`)({
-                      identifier: path.node,
-                      scope: getScopeIdentifierForVariable(path),
-                      name: t.stringLiteral(path.node.name)
-                    }))
-                  path.node.name += 'R';
+                    })(IDENTIFIER, SCOPE, NAME)`)({
+                      IDENTIFIER: path.node,
+                      SCOPE: getScopeIdentifierForVariable(path),
+                      NAME: t.stringLiteral(path.node.name)
+                    }));
                 });
                 localWrites.forEach(path => {
                   let assignment = path.parentPath;
                   assignment.replaceWith(
-                    template(`(result => {return result;
-                    })(assignment, scope, name)`)({
-                      assignment: assignment.node,
-                      scope: getScopeIdentifierForVariable(path),
-                      name: t.stringLiteral(path.node.name)
+                    template(`((result, scope, name) => {
+                      setLocal(scope, name);
+                      return result;
+                    })(ASSIGNMENT, SCOPE, NAME)`)({
+                      ASSIGNMENT: assignment.node,
+                      SCOPE: getScopeIdentifierForVariable(path),
+                      NAME: t.stringLiteral(path.node.name)
                     })
                   );
                 });
-                return;
-                let assignmentExpressions = new Set();
-                program.traverse({
-                    AssignmentExpression(path) {
-                      assignmentExpressions.add(path);
-                    },
-                    UpdateExpression(path) {
-                      assignmentExpressions.add(path);
-                    }
-                });
-                assignmentExpressions.forEach(path => {
-                  path.replaceWith(template(`(result => {
-                    resolveSignals();
-                    return result
-                  })(expr)`)({ expr: path.node }));
-                });
-
-                var signal = template(`(signals.push(() => name = init), init)`);
-                program.traverse({
-                    Identifier(path) {
-                        if(!path.parentPath.isVariableDeclarator()) { return; }
-
-                        // const as substitute for 'signal' for now #TODO
-                        var declaration = path.parentPath.parentPath.node;
-                        if(declaration.kind !== 'const') {return; }
-                        declaration.kind = 'let';
-
-                        var init = path.parentPath.get('init');
-                        init.replaceWith(signal({
-                            init: init,
-                            name: path.node
-                        }).expression);
-                    }
-                });
+                signalDeclarators.forEach(decl => {
+                  decl.parentPath.node.kind = 'let';
+                  let init = decl.get('init'),
+                      id = decl.get('id');
+                  init.replaceWith(template(`defineSignal(SCOPE, NAME, () => INIT, () => VAR = INIT)`)({
+                    SCOPE: getScopeIdentifierForVariable(id),
+                    NAME: t.stringLiteral(id.node.name),
+                    VAR: t.identifier(id.node.name),
+                    INIT: init
+                  }));
+                })
 
                 program.unshiftContainer("body", setup());
             }
