@@ -12,7 +12,10 @@ const signals = [],
       let startingIndex = signals.indexOf(starting);
       signals
         .filter((s, i) => i >= startingIndex)
-        .forEach(s => s.resolve());
+        .forEach(s => {
+          s.resolve();
+          s.initialize();
+        });
     },
     getLocal = function(scope, name) {
       if(Signal.determineDepencencies) {
@@ -179,8 +182,24 @@ class CompositeKey {
                 });
 
                 let localReads = new Set();
+                let globalReads = new Set();
                 let localWrites = new Set();
                 let signalDeclarators = new Set();
+                let objPropReads = new Set();
+                let objPropWrites = new Set();
+                let objPropCalls = new Set();
+                
+                program.traverse({
+                  MemberExpression(path) {
+                    if(path.parentPath.isAssignmentExpression() && path.parentKey === 'left') {
+                      objPropWrites.add(path);
+                    } else if(path.parentPath.isCallExpression() && path.parentKey === 'callee') {
+                      objPropCalls.add(path);
+                    } else {
+                      objPropReads.add(path);
+                    }
+                  }
+                });
                 
                 program.traverse({
                   Identifier(path) {
@@ -188,17 +207,19 @@ class CompositeKey {
                       localWrites.add(path);
                     } else if (isVariable(path) && isLocallyDefined(path) && !identifierInDeclaration(path)){
                       localReads.add(path);
-                    } else if (isVariable(path) &&isLocallyDefined(path)) {
+                    } else if (isVariable(path) && isLocallyDefined(path)) {
                       let pattern = bubbleThroughPattern(path);
                       // const as substitute for 'signal' for now #TODO
                       if(pattern.parentPath.parentPath.node.kind === 'const') {
                         signalDeclarators.add(pattern.parentPath);
                       }
+                    } else if(isVariable(path) && !isLocallyDefined(path)) {
+                      globalReads.add(path);
                     }
                   }
                 });
                 
-                localReads.forEach(path => {
+                let rewriteGetter = path => {
                   path.replaceWith(template(`((result, scope, name) => {
                       getLocal(scope, name);
                       return result;
@@ -207,7 +228,22 @@ class CompositeKey {
                       SCOPE: getScopeIdentifierForVariable(path),
                       NAME: t.stringLiteral(path.node.name)
                     }));
-                });
+                };
+                globalReads.forEach(rewriteGetter);
+                localReads.forEach(rewriteGetter);
+                
+                signalDeclarators.forEach(decl => {
+                  decl.parentPath.node.kind = 'let';
+                  let init = decl.get('init'),
+                      id = decl.get('id');
+                  init.replaceWith(template(`defineSignal(SCOPE, NAME, () => INIT, () => VAR = INIT)`)({
+                    SCOPE: getScopeIdentifierForVariable(id),
+                    NAME: t.stringLiteral(id.node.name),
+                    VAR: t.identifier(id.node.name),
+                    INIT: init
+                  }));
+                })
+
                 localWrites.forEach(path => {
                   let assignment = path.parentPath;
                   assignment.replaceWith(
@@ -221,17 +257,52 @@ class CompositeKey {
                     })
                   );
                 });
-                signalDeclarators.forEach(decl => {
-                  decl.parentPath.node.kind = 'let';
-                  let init = decl.get('init'),
-                      id = decl.get('id');
-                  init.replaceWith(template(`defineSignal(SCOPE, NAME, () => INIT, () => VAR = INIT)`)({
-                    SCOPE: getScopeIdentifierForVariable(id),
-                    NAME: t.stringLiteral(id.node.name),
-                    VAR: t.identifier(id.node.name),
-                    INIT: init
-                  }));
+                
+                objPropReads.forEach(p => {
+                  program.unshiftContainer('body', t.expressionStatement(t.stringLiteral(p.node.property.name)));
                 })
+                objPropReads.forEach(path => {
+                  let obj = path.get('object'),
+                      prop = path.get('property'),
+                      computed = path.node.computed;
+                  path.replaceWith(template(`((obj, prop) => {
+                      getLocal(obj, prop);
+                      return obj[prop];
+                    })(OBJECT, PROP_NAME)`)({
+                      OBJECT: obj.node,
+                      PROP_NAME: computed ? prop.node : t.stringLiteral(prop.node.name)
+                    }));
+                });
+                objPropWrites.forEach(path => {
+                  let assignment = path.parentPath;
+                  let operator = assignment.node.operator;
+                  let obj = path.get('object'),
+                      prop = path.get('property'),
+                      computed = path.node.computed;
+                  assignment.replaceWith(
+                    template(`((obj, prop, value) => {
+                      let result = obj[prop] ${operator} value;
+                      setLocal(obj, prop);
+                      return result;
+                    })(OBJECT, PROP_NAME, VALUE)`)({
+                      OBJECT: obj.node,
+                      PROP_NAME: computed ? prop.node : t.stringLiteral(prop.node.name),
+                      VALUE: assignment.node.right
+                    })
+                  );
+                });
+                objPropCalls.forEach(path => {
+                  let obj = path.get('object'),
+                      prop = path.get('property'),
+                      computed = path.node.computed;
+                  path.replaceWith(template(`((obj, prop, ) => {
+                      getLocal(obj, prop);
+                      return obj[prop].bind(obj);
+                    })(OBJECT, PROP_NAME)`)({
+                      OBJECT: obj.node,
+                      PROP_NAME: computed ? prop.node : t.stringLiteral(prop.node.name)
+                    }));
+                });
 
                 program.unshiftContainer("body", setup());
             }
