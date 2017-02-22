@@ -1,4 +1,4 @@
-# Signals based on Active Expressions [![Build Status](https://travis-ci.org/active-expressions/programming-signals-aexpr.svg?branch=master)](https://travis-ci.org/active-expressions/programming-signals-aexpr)
+# Plain Signal Implementation
 
 ## Installation
 <!--
