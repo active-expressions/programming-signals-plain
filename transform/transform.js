@@ -36,14 +36,12 @@ var aexprCallbacks = [],
                 let aexprs = new Set();
                 program.traverse({
                     CallExpression(path) {
-                        if(!path.get("callee").isIdentifier()) { return; }
-                        if(path.get("callee").node.name !== 'aexpr') { return; }
-                        aexprs.add(path);
+                        let callee = path.get("callee");
+                        if(callee.isIdentifier() && callee.node.name === 'aexpr')
+                            aexprs.add(path);
                     }
                 });
-                aexprs.forEach(path => {
-                    path.replaceWith(template(`newAExpr(expr)`)({ expr: path.node }))
-                });
+                aexprs.forEach(path => path.replaceWith(template(`newAExpr(expr)`)({ expr: path.node })));
 
                 program.traverse({
                     Identifier(path) {
@@ -56,9 +54,9 @@ var aexprCallbacks = [],
 
                         var init = path.parentPath.get('init');
                         init.replaceWith(signal({
-                            init:init,
-                            name:path.node
-                        }).expression)
+                            init: init,
+                            name: path.node
+                        }).expression);
                     }
                 });
 
