@@ -9,29 +9,35 @@ exports.default = function ( /*istanbul ignore next*/_ref) {
         template = _ref.template,
         traverse = _ref.traverse;
 
-
-    var signal = template( /*istanbul ignore next*/"(aexpr(() => init)\n                             .onChange(val => name = val),\n                             init)");
+    var setup = template( /*istanbul ignore next*/"\nvar aexprCallbacks = [],\n    signals = [],\n    solveSignals = false,\n    resolveSignals = function() {\n        if(!solveSignals) {\n            solveSignals = true;\n            signals.forEach(s => s());\n            solveSignals = false;\n            let nonSignalCB;\n            while(nonSignalCB = aexprCallbacks.pop()) {\n                nonSignalCB();\n            }\n        }\n    },\n    newAExpr = function(axp) {\n        return {\n            onChange(cb) {\n                axp.onChange(val => {\n                    if(solveSignals) {\n                        aexprCallbacks.push(() => cb(axp.getCurrentValue()));\n                    } else {\n                        return cb(val);\n                    }\n                });\n            }\n        }\n    }\n");
+    var signal = template( /*istanbul ignore next*/"(aexpr(() => init).onChange(resolveSignals), signals.push(() => name = init), init)");
 
     return {
         visitor: {
             /*istanbul ignore next*/Program: function Program(program) {
+                var aexprs = new Set();
                 program.traverse({
                     /*istanbul ignore next*/CallExpression: function CallExpression(path) {
                         if (!path.get("callee").isIdentifier()) {
                             return;
                         }
-                        if (!path.get("callee").node.name !== 'aexpr') {
+                        if (path.get("callee").node.name !== 'aexpr') {
                             return;
                         }
+                        aexprs.add(path);
                     }
                 });
+                aexprs.forEach(function (path) {
+                    path.replaceWith(template( /*istanbul ignore next*/"newAExpr(expr)")({ expr: path.node }));
+                });
+
                 program.traverse({
                     /*istanbul ignore next*/Identifier: function Identifier(path) {
                         if (!path.parentPath.isVariableDeclarator()) {
                             return;
                         }
 
-                        // const as substitute for 'signal'
+                        // const as substitute for 'signal' for now #TODO
                         var declaration = path.parentPath.parentPath.node;
                         if (declaration.kind !== 'const') {
                             return;
@@ -45,6 +51,8 @@ exports.default = function ( /*istanbul ignore next*/_ref) {
                         }).expression);
                     }
                 });
+
+                program.unshiftContainer("body", setup());
             }
         }
     };

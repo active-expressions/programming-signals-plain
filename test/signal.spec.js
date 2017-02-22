@@ -33,8 +33,9 @@ describe('Signal Logic', function() {
         expect(c).to.equal(b + 2);
     });
 
-    xit('shows the glitch problem', () => {
+    it('prevents glitches', () => {
         let a = 0;
+        let counter = 0;
         const b = a;
         const c = a + 1;
 
@@ -43,10 +44,20 @@ describe('Signal Logic', function() {
                 throw new Error('subject to the glitch problem! a: ' + a + ', b: ' + b + ', c: ' +c);
             }
         }
+        aexpr(() => b).onChange(() => {
+            checkConsistency();
+            expect(b).to.equal(a);
+            counter += 1;
+        });
 
-        aexpr(() => b).onChange(checkConsistency);
-        aexpr(() => c).onChange(checkConsistency);
+        aexpr(() => c).onChange(() => {
+            checkConsistency();
+            expect(c).to.equal(a + 1);
+            counter += 1;
+        });
 
         a = -10;
+
+        expect(counter).to.equal(2);
     });
 });
