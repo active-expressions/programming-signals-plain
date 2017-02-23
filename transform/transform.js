@@ -3,6 +3,7 @@ const IS_EXPLICIT_SCOPE_OBJECT = Symbol('FLAG: generated scope object');
 export default function({ types: t, template, traverse, }) {
     var setup = template(`
 const signals = [],
+    adjustedDependencies = [],
     defineSignal = function(scope, name, init, solve) {
       let signal = new Signal(scope, name, init, solve);
       signals.push(signal);
@@ -13,8 +14,11 @@ const signals = [],
       signals
         .filter((s, i) => i >= startingIndex)
         .forEach(s => {
-          s.resolve();
-          s.initialize();
+          if(adjustedDependencies.some(([scope, name]) => s.hasDependency(scope, name))) {
+            s.resolve();
+            adjustedDependencies.push([s.scope, s.name]);
+            s.initialize();
+          }
         });
     },
     getLocal = function(scope, name) {
@@ -27,6 +31,7 @@ const signals = [],
       let triggeredSignal = signals.find(s => s.hasDependency(scope, name));
       if(triggeredSignal) {
         Signal.solving = true;
+        adjustedDependencies = [[scope, name]];
         resolveSignals(triggeredSignal);
         Signal.solving = false;
       }
