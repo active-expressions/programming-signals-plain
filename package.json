@@ -8,8 +8,9 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "npm run prepare-transform && npm run rollup && npm run karma",
+    "test": "npm run prepare-transform && npm run signals-to-const && npm run rollup && npm run karma",
     "prepare-transform": "cd transform && babel transform.js --out-file ../test/temp/signal-plugin/index.js && cd ..",
+    "signals-to-const": "node signals-to-const.js",
     "rollup": "npm run rollup1 && npm run rollup2 && npm run rollup3",
     "rollup1": "rollup -c rollup.config.pre-babel.js",
     "rollup2": "cd test/temp && babel pre-babel.js --out-file post-babel.js && cd ../..",
@@ -91,6 +92,7 @@
     "node-static": "^0.7.7",
     "phantomjs": "1.9.7-15",
     "phantomjs-prebuilt": "^2.1.7",
+    "replace-in-file": "^2.4.0",
     "require": "^2.4.20",
     "requirejs": "^2.2.0",
     "rollem": "^1.2.0",
