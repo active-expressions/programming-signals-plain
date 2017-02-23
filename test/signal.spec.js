@@ -60,7 +60,7 @@ describe('Signal Logic', function() {
 
         expect(counter).to.equal(2);
     });
-    
+
     xit('covered cases', () => {
       let obj = {
         prop1: 1,

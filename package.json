@@ -8,8 +8,9 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "npm run prepare-transform && npm run signals-to-const && npm run rollup && npm run karma",
+    "test": "npm run prepare-transform && npm run copy-tests && npm run signals-to-const && npm run rollup && npm run karma",
     "prepare-transform": "cd transform && babel transform.js --out-file ../test/temp/signal-plugin/index.js && cd ..",
+    "copy-tests": "node copy-tests.js",
     "signals-to-const": "node signals-to-const.js",
     "rollup": "npm run rollup1 && npm run rollup2 && npm run rollup3",
     "rollup1": "rollup -c rollup.config.pre-babel.js",

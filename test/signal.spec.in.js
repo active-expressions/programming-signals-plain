@@ -6,7 +6,7 @@ describe('Signal Logic', function() {
 
     it('one simple dataflow', () => {
         let a = 0;
-       const s = a;
+        signal s = a;
 
         expect(s).to.equal(0);
 
@@ -20,9 +20,9 @@ describe('Signal Logic', function() {
         let a = 5,
             spy = sinon.spy();
 
-       const b = a + 2;
+        signal b = a + 2;
 
-       const c = b + 2;
+        signal c = b + 2;
 
         expect(b).to.equal(a + 2);
         expect(c).to.equal(b + 2);
@@ -36,8 +36,8 @@ describe('Signal Logic', function() {
     xit('prevents glitches', () => {
         let a = 0;
         let counter = 0;
-       const b = a;
-       const c = a + 1;
+        signal b = a;
+        signal c = a + 1;
 
         function checkConsistency() {
             if(c !== b + 1) {
@@ -60,7 +60,7 @@ describe('Signal Logic', function() {
 
         expect(counter).to.equal(2);
     });
-    
+
     xit('covered cases', () => {
       let obj = {
         prop1: 1,
@@ -71,8 +71,8 @@ describe('Signal Logic', function() {
       window.glob = 1;
       function foo(a, b) { return a + glob; }
       let a = 0, b = 1;
-     const s = 1+ a + foo(a,a);
-     const t = s + obj.prop1 + obj.func();
+      signal s = 1+ a + foo(a,a);
+      signal t = s + obj.prop1 + obj.func();
       console.log(['init(2,3) ', s, t])
       
       a = 42;

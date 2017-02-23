@@ -1,11 +1,8 @@
-var fs = require('fs');
-fs.createReadStream('test/signal.spec.in.js').pipe(fs.createWriteStream('test/signal.spec.js'));
-
 const replace = require('replace-in-file');
 const options = {
 
     //Single file
-    files: 'test/signal.spec.in.js',
+    files: 'test/signal.spec.js',
 
     //Multiple replacements with different strings (replaced sequentially)
     from: [/(?:[^a-zA-z])const(?:[ \t\n])/g, /(?:[^a-zA-z])signal(?:[ \t\n])/g],
