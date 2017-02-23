@@ -14,7 +14,11 @@ const signals = [],
       signals
         .filter((s, i) => i >= startingIndex)
         .forEach(s => {
-          if(adjustedDependencies.some(([scope, name]) => s.hasDependency(scope, name))) {
+          if(adjustedDependencies.some((dep) => {
+              let scope = dep[0],
+                  name = dep[1];
+              return s.hasDependency(scope, name);
+            })) {
             s.resolve();
             adjustedDependencies.push([s.scope, s.name]);
             s.initialize();
