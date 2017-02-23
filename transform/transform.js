@@ -35,7 +35,8 @@ const signals = [],
       let triggeredSignal = signals.find(s => s.hasDependency(scope, name));
       if(triggeredSignal) {
         Signal.solving = true;
-        adjustedDependencies = [[scope, name]];
+        adjustedDependencies.length = 0;
+        adjustedDependencies.push([scope, name]);
         resolveSignals(triggeredSignal);
         Signal.solving = false;
       }
